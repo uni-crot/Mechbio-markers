@@ -10,18 +10,17 @@ library(grid)
 library(forcats)
 library(purrr)
 
-cell_lines <- read.csv('/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/Model.csv', stringsAsFactors = FALSE)
-
+cell_lines <- read.csv('/data/Model.csv', stringsAsFactors = FALSE)
 cell_lines <- cell_lines %>% filter(GrowthPattern != 'Suspension') 
 
 # cell lines only cancer
 cell_lines_canc <- cell_lines %>% filter(OncotreeLineage %in% c('Breast', 'Pancreas', 'CNS/Brain') & OncotreePrimaryDisease != 'Non-Cancerous')
-
 cell_lines_canc %>% group_by(OncotreeLineage) %>% summarise(n=n())
+
 # cell lines normal and non-cancerous across all organs
 lines_noncanc <- cell_lines %>% filter(OncotreeLineage == 'Normal' | OncotreePrimaryDisease == 'Non-Cancerous') 
 
-metmap <- read_xlsx('/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/Supplementary Table 04 MetMap 500 met potential.xlsx', sheet=6)  
+metmap <- read_xlsx('/data/Supplementary Table 04 MetMap 500 met potential.xlsx', sheet=6)  
 
 metmap$...1 <- sub("_.*", "", metmap$...1)
 
@@ -35,12 +34,12 @@ cell_lines_canc <- cell_lines_canc %>% mutate(Metastatic_MetMap = ifelse(cell_li
 
 lines_noncanc <- lines_noncanc %>% mutate(lines_noncanc = ifelse(lines_noncanc$MetMap >= -2, 'High confidence',ifelse(lines_noncanc$MetMap <= -4, 'Non-metastatic', 'Low confidence')))
 
-# write.xlsx(cell_lines_canc, file = "/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/Cell_lines_canc_metmap.xlsx", overwrite = TRUE)
+# write.xlsx(cell_lines_canc, file = "/data/Cell_lines_canc_metmap.xlsx", overwrite = TRUE)
 
 # Get Data  ------------------------------------------------------------
 
 # --- Brain ---
-Brain_mechbio <- read.csv('/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/CNS_Brain.csv', stringsAsFactors = FALSE)
+Brain_mechbio <- read.csv('/data/CNS_Brain.csv', stringsAsFactors = FALSE)
 
 Brain_mechbio <- Brain_mechbio %>%
   left_join(cell_lines_canc %>% select(ModelID, PrimaryOrMetastasis, Metastatic_MetMap, OncotreeSubtype), by = c("X" = "ModelID"))
@@ -58,7 +57,7 @@ Brain_mechbio <- Brain_mechbio %>% filter(X %in% vec1)
 Brain_mechbio$Organ <- 'CNS/Brain'
 
 # --- Pancreas ---
-Pancreas_mechbio <- read.csv('/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/Pancreas.csv', stringsAsFactors = FALSE)
+Pancreas_mechbio <- read.csv('/data/Pancreas.csv', stringsAsFactors = FALSE)
 Pancreas_mechbio <- Pancreas_mechbio %>%
   left_join(cell_lines_canc %>% select(ModelID, PrimaryOrMetastasis, Metastatic_MetMap), by = c("X" = "ModelID"))
 
@@ -71,7 +70,7 @@ Pancreas_mechbio <- Pancreas_mechbio %>% filter(X %in% vec1)
 Pancreas_mechbio$Organ <- 'Pancreas'
 
 #  --- Breast ---
-Breast_mechbio <- read.csv('/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/Breast.csv', stringsAsFactors = FALSE)
+Breast_mechbio <- read.csv('/data/Breast.csv', stringsAsFactors = FALSE)
 
 Breast_mechbio <- Breast_mechbio %>%
   left_join(cell_lines_canc %>% select(ModelID, OncotreePrimaryDisease, OncotreeSubtype,  PrimaryOrMetastasis, Metastatic_MetMap, GrowthPattern), by = c("X" = "ModelID"))
@@ -85,7 +84,7 @@ Breast_mechbio$PrimaryOrMetastasis[Breast_mechbio$PrimaryOrMetastasis == ""] <- 
 Breast_mechbio$Organ <- 'Breast'
 
 # --- Normal ---
-Non_canc_mechbio <- read.csv('/Users/unicrot/Desktop/Лаба/Биоинформатика/Статья/для DepMap/Глиобластомы/Для CELL/Mean/Non-canc.csv', stringsAsFactors = FALSE)
+Non_canc_mechbio <- read.csv('/data/Non-canc.csv', stringsAsFactors = FALSE)
 
 Non_canc_mechbio <- Non_canc_mechbio %>%
   left_join(lines_noncanc %>% select(ModelID, OncotreeLineage), by = c("X" = "ModelID"))
@@ -142,8 +141,6 @@ pvals$p_PrimMet_adj <- p.adjust(pvals$p_PrimMet, method = "fdr")
 pvals$p_metmap_adj <- p.adjust(pvals$p_metmap, method = "fdr")
 
 pvals <- pvals[order(pvals$p_metmap_adj), ]
-
-# write.csv(pvals, "groupwise_pvals.csv", row.names = FALSE)
 
 # Kruskal- Wallis test -------------------------------------------------------------------
 all_data_pan <- Breast_mechbio[, c(2:45, 48, 49, 51)] 
@@ -377,7 +374,6 @@ long_data <- all_data_pan %>%
   ) %>%
   drop_na(Value)
 
-
 get_significant_wilcox <- function(data, group_var, threshold = 0.05) {
   data %>%
     filter(!is.na(.data[[group_var]])) %>%
@@ -503,7 +499,6 @@ facet_structure <- list(
     c("ANXA6", "MetMap level"),
     c("EZR",   "MetMap level"),
     c("MYH9",  "MetMap level")))
-
 
 data_type_order <- c("Gene Effect (CRISPR)", "Expression", "RNAi", "Copy Number")
 
@@ -795,7 +790,6 @@ plot_zscore_summary <- function(long_data,
     } else {
       NULL}}
 
-
 data_z <- all_data_pan %>% filter(Organ != 'normal')
 long_data_all <- prepare_zscore_data(data_z, group_var = "Metastatic_MetMap")
 plot_zscore_summary(long_data_all)
@@ -903,7 +897,6 @@ combos_cns$parameter_summary
 combos_cns$combinations %>% length()
 combos_cns$combinations %>% View()
 
-
 # for Pan-cancer Tumor Type classification we'll rename CNS/Brain levels. Although it is not exactly the same comparison, for this analysis it is appropriate by sense 
 
 data_z_ch <- data_z %>% 
@@ -930,7 +923,6 @@ combos_all_changed_metmap <- find_successful_combinations(
 combos_all_changed_tumtype$parameter_summary
 combos_all_changed_tumtype$combinations %>% length()
 combos_all_changed_tumtype$combinations %>% View()
-
 
 # finding intersection in lists of combinations and parameters across organs and pan-cancer dataset
 
@@ -1064,7 +1056,6 @@ ggplot(zscore_data, aes(x = group, y = zscore, fill = group)) +
     values = c(
       "High confidence" = "#F8766D",  
       "Low confidence"  = "#00BFC4" ))
-
 
 # Tumor Type - Copy Number was the best
 ## for pan-cancer dataset 
