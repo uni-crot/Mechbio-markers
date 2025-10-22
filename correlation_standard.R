@@ -2,17 +2,12 @@ library(dplyr)
 library(pheatmap)
 library(ggraph)
 library(tidygraph) 
-
-install.packages("BiocManager")
-BiocManager::install("ComplexHeatmap")
-
 library(ComplexHeatmap)
 library(circlize)
 
-
 # Expression Correlation Analysis in pan-cancer data - Figure 5---------------------
 
-data <- read.csv('Batch_corrected_Expression_Public_24Q4_subsetted.csv', stringsAsFactors = FALSE)
+data <- read.csv('/data/Batch_corrected_Expression_Public_24Q4_subsetted.csv', stringsAsFactors = FALSE)
 data <- data[, -c(1, 4:7)]
 
 # Our potential metastasis markers
@@ -129,7 +124,7 @@ Heatmap(
 
 # Copy Number correlation analysis  --------------------------------------------------
 
-cn <- read.csv('Copy_Number_Public_24Q4_subsetted.csv', stringsAsFactors = FALSE)
+cn <- read.csv('/data/Copy_Number_Public_24Q4_subsetted.csv', stringsAsFactors = FALSE)
 cn <- cn[, -c(1, 4:7)]
 
 results_cn <- data.frame(
